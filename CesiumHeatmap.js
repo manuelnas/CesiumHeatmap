@@ -1,7 +1,7 @@
 /*
  *	CesiumHeatmap.js v0.1 | Cesium Heatmap Library
  *	
- *	Works with heatmap.js v2.0.0
+ *	Works with heatmap.js v2.0.0: http://www.patrick-wied.at/static/heatmapjs/
  */
 (function(window){
     'use strict';
