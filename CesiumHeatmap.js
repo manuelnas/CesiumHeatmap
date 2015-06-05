@@ -1,7 +1,7 @@
 /*
- *	CesiumHeatmap.js v0.1 | Cesium Heatmap Library
- *	
- *	Works with heatmap.js v2.0.0: http://www.patrick-wied.at/static/heatmapjs/
+ *  CesiumHeatmap.js v0.1 | Cesium Heatmap Library
+ *  
+ *  Works with heatmap.js v2.0.0: http://www.patrick-wied.at/static/heatmapjs/
  */
 (function(window){
     'use strict';
@@ -10,7 +10,7 @@
         var CesiumHeatmap = {
 			defaults: {
 				minCanvasSize: 1000, // minimum size (in pixels) for the heatmap canvas
-				maxCanvasSize: 4000, // maximum size (in pixels) for the heatmap canvas
+				maxCanvasSize: 3000, // maximum size (in pixels) for the heatmap canvas
 				radiusFactor: 60,    // data point size factor used if no radius is given (the greater of height and width divided by this number yields the used radius)
 				spacingFactor: 1.5,  // extra space around the borders (point radius multiplied by this number yields the spacing)
 				maxOpacity: 0.8,     // the maximum opacity used if not given in the heatmap options object
@@ -27,32 +27,41 @@
 		
 		/*  Create a CesiumHeatmap instance
 		 *
-		 *  cWidget: the CesiumWidget instance
-		 *  bb:      the bounding box in WGS84
+		 *  cesium:  the CesiumWidget or Viewer instance
+		 *  bb:      the WGS84 bounding box like {north, east, south, west}
 		 *  options: a heatmap.js options object (see http://www.patrick-wied.at/static/heatmapjs/docs.html#h337-create)
 		 */
-		CesiumHeatmap.create = function(cWidget, bb, options) {
-			var instance = new CHInstance(cWidget, bb, options);
-			
-			if (!cWidget.entities) {
-				cWidget.entities = cWidget.scene.primitives.add(new Cesium.EntityCollection());
-			}
-			
+		CesiumHeatmap.create = function(cesium, bb, options) {
+			var instance = new CHInstance(cesium, bb, options);
 			return instance;
 		};
 		
-		CesiumHeatmap._createContainer = function(width, height) {
+		CesiumHeatmap._getContainer = function(width, height) {
 			var c = document.createElement("div");
 			c.setAttribute("style", "width: " + width + "px; height: " + height + "px; margin: 0px; display: none;");
 			document.body.appendChild(c);
 			return c;
 		};
 		
+		CesiumHeatmap._getImageryProvider = function(instance) {
+			var imgprov = new Cesium.SingleTileImageryProvider({
+				url: instance._heatmap.getDataURL(),
+				rectangle : instance._rectangle
+			});
+			
+			imgprov._tilingScheme = new Cesium.WebMercatorTilingScheme({
+				rectangleSouthwestInMeters: new Cesium.Cartesian2(instance._mbounds.west, instance._mbounds.south),
+				rectangleNortheastInMeters: new Cesium.Cartesian2(instance._mbounds.east, instance._mbounds.north)
+			});
+			
+			return imgprov;
+		};
+		
 		var WMP = new Cesium.WebMercatorProjection();
 		
 		/*  Convert a WGS84 location into a mercator location
 		 *
-		 *  p: the WGS84 location (x = lon, y = lat)
+		 *  p: the WGS84 location like {x: lon, y: lat}
 		 */
 		CesiumHeatmap.wgs84ToMercator = function(p) {
 			var mp = WMP.project(Cesium.Cartographic.fromDegrees(p.x, p.y));
@@ -64,7 +73,7 @@
 		
 		/*  Convert a WGS84 bounding box into a mercator bounding box
 		 *
-		 *  bb: the WGS84 bounding box with north, east, south and west
+		 *  bb: the WGS84 bounding box like {north, east, south, west}
 		 */
 		CesiumHeatmap.wgs84ToMercatorBB = function(bb) {
 			var sw = WMP.project(Cesium.Cartographic.fromDegrees(bb.west, bb.south));
@@ -79,7 +88,7 @@
 		
 		/*  Convert a mercator location into a WGS84 location
 		 *
-		 *  p: the mercator lcation with (x, y)
+		 *  p: the mercator lcation like {x, y}
 		 */
 		CesiumHeatmap.mercatorToWgs84 = function(p) {
 			var wp = WMP.unproject(new Cesium.Cartesian3(p.x, p.y));
@@ -91,7 +100,7 @@
 		
 		/*  Convert a mercator bounding box into a WGS84 bounding box
 		 *
-		 *  bb: the mercator bounding box with north, east, south and west
+		 *  bb: the mercator bounding box like {north, east, south, west}
 		 */
 		CesiumHeatmap.mercatorToWgs84BB = function(bb) {
 			var sw = WMP.unproject(new Cesium.Cartesian3(bb.west, bb.south));
@@ -133,7 +142,7 @@
 /*  Initiate a CesiumHeatmap instance
  *
  *  c:  CesiumWidget instance
- *  bb: a WGS84 bounding box with north, east, south and west
+ *  bb: a WGS84 bounding box like {north, east, south, west}
  *  o:  a heatmap.js options object (see http://www.patrick-wied.at/static/heatmapjs/docs.html#h337-create)
  */
 function CHInstance(c, bb, o) {
@@ -168,14 +177,14 @@ function CHInstance(c, bb, o) {
 	this.bounds = CesiumHeatmap.mercatorToWgs84BB(this._mbounds);
 	
 	this._rectangle = Cesium.Rectangle.fromDegrees(this.bounds.west, this.bounds.south, this.bounds.east, this.bounds.north);
-	this._container = CesiumHeatmap._createContainer(this.width, this.height);
+	this._container = CesiumHeatmap._getContainer(this.width, this.height);
 	this._options.container = this._container;
 	this._heatmap = h337.create(this._options);
 }
 
 /*  Convert a WGS84 location to the corresponding heatmap location
  *
- *  p: a WGS84 location (x = lon, y = lat)
+ *  p: a WGS84 location like {x: lon, y:lat}
  */
 CHInstance.prototype.wgs84PointToHeatmapPoint = function(p) {
 	return this.mercatorPointToHeatmapPoint(CesiumHeatmap.wgs84ToMercator(p));
@@ -183,7 +192,7 @@ CHInstance.prototype.wgs84PointToHeatmapPoint = function(p) {
 
 /*  Convert a mercator location to the corresponding heatmap location
  *
- *  p: a WGS84 location (x = lon, y = lat)
+ *  p: a WGS84 location like {x: lon, y:lat}
  */
 CHInstance.prototype.mercatorPointToHeatmapPoint = function(p) {
 	var pn = {};
@@ -234,7 +243,7 @@ CHInstance.prototype._setWidthAndHeight = function(mbb) {
  *
  *  min:  the minimum allowed value for the data values
  *  max:  the maximum allowed value for the data values
- *  data: an array of data points in heatmap coordinates and values like so: { x, y, value }
+ *  data: an array of data points in heatmap coordinates and values like {x, y, value}
  */
 CHInstance.prototype.setData = function(min, max, data) {
 	if (data && data.length > 0 && min !== null && min !== false && max !== null && max !== false) {
@@ -254,7 +263,7 @@ CHInstance.prototype.setData = function(min, max, data) {
  *
  *  min:  the minimum allowed value for the data values
  *  max:  the maximum allowed value for the data values
- *  data: an array of data points in WGS84 coordinates and values like so: { x, y, value }
+ *  data: an array of data points in WGS84 coordinates and values like { x:lon, y:lat, value }
  */
 CHInstance.prototype.setWGS84Data = function(min, max, data) {
 	if (data && data.length > 0 && min !== null && min !== false && max !== null && max !== false) {
@@ -285,7 +294,7 @@ CHInstance.prototype.show = function(s) {
 	}
 };
 
-/*  Update/redraw the shown heatmap
+/*  Update/redraw the heatmap
  */
 CHInstance.prototype.updateLayer = function() {
 	//*
@@ -293,25 +302,22 @@ CHInstance.prototype.updateLayer = function() {
 		this._cesium.scene.imageryLayers.remove(this._layer);
 	}
 	
-	this._imgprov = new Cesium.SingleTileImageryProvider({
-		url: this._heatmap.getDataURL(),
-		rectangle : this._rectangle
-	});
-	this._layer = this._cesium.scene.imageryLayers.addImageryProvider(this._imgprov);
+	this._layer = this._cesium.scene.imageryLayers.addImageryProvider(CesiumHeatmap._getImageryProvider(this));
 	/*/
-	if (this._layer) {
-		this._cesium.entities.remove(this._layer);
-	}
-	
-	this._layer = this._cesium.entities.add({
-		show: true,
-		rectangle: {
-			coordinates: this._rectangle,
-			material: this._heatmap
+	if (this._cesium.entities) { //only works with a Viewer instance since the cesiumWidget instance doesn't contain a entities property
+		if (this._layer) {
+			this._cesium.entities.remove(this._layer);
 		}
-	});
+		
+		this._layer = this._cesium.entities.add({
+			show: true,
+			rectangle: {
+				coordinates: this._rectangle,
+				material: this._heatmap
+			}
+		});
+	} //else use imageryLayers?
 	//*/
-	
 };
 
 /*  Don't touch:
