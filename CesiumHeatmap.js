@@ -9,14 +9,15 @@
     function define_CesiumHeatmap() {
         var CesiumHeatmap = {
 			defaults: {
-				minCanvasSize: 1000, // minimum size (in pixels) for the heatmap canvas
-				maxCanvasSize: 3000, // maximum size (in pixels) for the heatmap canvas
-				radiusFactor: 60,    // data point size factor used if no radius is given (the greater of height and width divided by this number yields the used radius)
-				spacingFactor: 1.5,  // extra space around the borders (point radius multiplied by this number yields the spacing)
-				maxOpacity: 0.8,     // the maximum opacity used if not given in the heatmap options object
-				minOpacity: 0.1,     // the minimum opacity used if not given in the heatmap options object
-				blur: 0.8,           // the blur used if not given in the heatmap options object
-				gradient: {          // the gradient used if not given in the heatmap options object
+				useEntitiesIfAvailable: true, //whether to use entities if a Viewer is supplied or always use an ImageryProvider
+				minCanvasSize: 700,           // minimum size (in pixels) for the heatmap canvas
+				maxCanvasSize: 2000,          // maximum size (in pixels) for the heatmap canvas
+				radiusFactor: 60,             // data point size factor used if no radius is given (the greater of height and width divided by this number yields the used radius)
+				spacingFactor: 1.5,           // extra space around the borders (point radius multiplied by this number yields the spacing)
+				maxOpacity: 0.8,              // the maximum opacity used if not given in the heatmap options object
+				minOpacity: 0.1,              // the minimum opacity used if not given in the heatmap options object
+				blur: 0.85,                   // the blur used if not given in the heatmap options object
+				gradient: {                   // the gradient used if not given in the heatmap options object
 					'.3': 'blue',
 					'.65': 'yellow',
 					'.8': 'orange',
@@ -36,18 +37,25 @@
 			return instance;
 		};
 		
-		CesiumHeatmap._getContainer = function(width, height) {
+		CesiumHeatmap._getContainer = function(width, height, id) {
 			var c = document.createElement("div");
+			if (id) { c.setAttribute("id", id); }
 			c.setAttribute("style", "width: " + width + "px; height: " + height + "px; margin: 0px; display: none;");
 			document.body.appendChild(c);
 			return c;
 		};
 		
 		CesiumHeatmap._getImageryProvider = function(instance) {
+			//var n = (new Date()).getTime();
+			var d = instance._heatmap.getDataURL();
+			//console.log("Create data URL: " + ((new Date()).getTime() - n));
+		     
+			//var n = (new Date()).getTime();
 			var imgprov = new Cesium.SingleTileImageryProvider({
-				url: instance._heatmap.getDataURL(),
+				url: d,
 				rectangle : instance._rectangle
 			});
+			//console.log("Create imageryprovider: " + ((new Date()).getTime() - n));
 			
 			imgprov._tilingScheme = new Cesium.WebMercatorTilingScheme({
 				rectangleSouthwestInMeters: new Cesium.Cartesian2(instance._mbounds.west, instance._mbounds.south),
@@ -55,6 +63,16 @@
 			});
 			
 			return imgprov;
+		};
+		
+		CesiumHeatmap._getID = function(len) {
+			var text = "";
+			var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+			for( var i=0; i < ((len) ? len : 8); i++ )
+				text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+			return text;
 		};
 		
 		var WMP = new Cesium.WebMercatorProjection();
@@ -137,7 +155,7 @@
     if(typeof(CesiumHeatmap) === 'undefined'){
         window.CesiumHeatmap = define_CesiumHeatmap();
     } else { console.log("CesiumHeatmap already defined."); }
-})(window); 
+})(window);
 
 /*  Initiate a CesiumHeatmap instance
  *
@@ -151,6 +169,7 @@ function CHInstance(c, bb, o) {
 	
 	this._cesium = c;
 	this._options = o;
+	this._id = CesiumHeatmap._getID();
 	
 	this._options.gradient = ((this._options.gradient) ? this._options.gradient : CesiumHeatmap.defaults.gradient);
 	this._options.maxOpacity = ((this._options.maxOpacity) ? this._options.maxOpacity : CesiumHeatmap.defaults.maxOpacity);
@@ -177,14 +196,15 @@ function CHInstance(c, bb, o) {
 	this.bounds = CesiumHeatmap.mercatorToWgs84BB(this._mbounds);
 	
 	this._rectangle = Cesium.Rectangle.fromDegrees(this.bounds.west, this.bounds.south, this.bounds.east, this.bounds.north);
-	this._container = CesiumHeatmap._getContainer(this.width, this.height);
+	this._container = CesiumHeatmap._getContainer(this.width, this.height, this._id);
 	this._options.container = this._container;
 	this._heatmap = h337.create(this._options);
+	this._container.children[0].setAttribute("id", this._id + "-hm");
 }
 
 /*  Convert a WGS84 location to the corresponding heatmap location
  *
- *  p: a WGS84 location like {x: lon, y:lat}
+ *  p: a WGS84 location like {x:lon, y:lat}
  */
 CHInstance.prototype.wgs84PointToHeatmapPoint = function(p) {
 	return this.mercatorPointToHeatmapPoint(CesiumHeatmap.wgs84ToMercator(p));
@@ -252,6 +272,7 @@ CHInstance.prototype.setData = function(min, max, data) {
 			max: max,
 			data: data
 		});
+		
 		this.updateLayer();
 		return true;
 	}
@@ -294,17 +315,11 @@ CHInstance.prototype.show = function(s) {
 	}
 };
 
-/*  Update/redraw the heatmap
+/*  Update/(re)draw the heatmap
  */
 CHInstance.prototype.updateLayer = function() {
-	//*
-	if (this._layer) {
-		this._cesium.scene.imageryLayers.remove(this._layer);
-	}
-	
-	this._layer = this._cesium.scene.imageryLayers.addImageryProvider(CesiumHeatmap._getImageryProvider(this));
-	/*/
-	if (this._cesium.entities) { //only works with a Viewer instance since the cesiumWidget instance doesn't contain a entities property
+	//only works with a Viewer instance since the cesiumWidget instance doesn't contain an entities property
+	if (CesiumHeatmap.defaults.useEntitiesIfAvailable && this._cesium.entities) {
 		if (this._layer) {
 			this._cesium.entities.remove(this._layer);
 		}
@@ -313,16 +328,21 @@ CHInstance.prototype.updateLayer = function() {
 			show: true,
 			rectangle: {
 				coordinates: this._rectangle,
-				material: this._heatmap
+				material: this._heatmap._renderer.canvas
 			}
 		});
-	} //else use imageryLayers?
-	//*/
+	} else {
+		if (this._layer) {
+			this._cesium.scene.imageryLayers.remove(this._layer);
+		}
+		
+		this._layer = this._cesium.scene.imageryLayers.addImageryProvider(CesiumHeatmap._getImageryProvider(this));
+	}
 };
 
-/*  Don't touch:
+/*  DON'T TOUCH:
  *
- *  heatmap.js v2.0.0 | JavaScript Heatmap Library
+ *  heatmap.js v2.0.0 | JavaScript Heatmap Library: http://www.patrick-wied.at/static/heatmapjs/
  *
  *  Copyright 2008-2014 Patrick Wied <heatmapjs@patrick-wied.at> - All rights reserved.
  *  Dual licensed under MIT and Beerware license 
