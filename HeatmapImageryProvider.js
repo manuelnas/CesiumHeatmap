@@ -147,7 +147,7 @@ define('Scene/HeatmapImageryProvider',[
          */
         tileWidth : {
             get : function() {
-                                if (!this._ready) {
+                if (!this._ready) {
                     throw new DeveloperError('tileWidth must not be called before the imagery provider is ready.');
                 }
                 
@@ -164,7 +164,7 @@ define('Scene/HeatmapImageryProvider',[
          */
         tileHeight: {
             get : function() {
-                                if (!this._ready) {
+                if (!this._ready) {
                     throw new DeveloperError('tileHeight must not be called before the imagery provider is ready.');
                 }
                 
@@ -181,7 +181,7 @@ define('Scene/HeatmapImageryProvider',[
          */
         maximumLevel : {
             get : function() {
-                                if (!this._ready) {
+                if (!this._ready) {
                     throw new DeveloperError('maximumLevel must not be called before the imagery provider is ready.');
                 }
                 
@@ -198,7 +198,7 @@ define('Scene/HeatmapImageryProvider',[
          */
         minimumLevel : {
             get : function() {
-                                if (!this._ready) {
+                if (!this._ready) {
                     throw new DeveloperError('minimumLevel must not be called before the imagery provider is ready.');
                 }
                 
@@ -215,7 +215,7 @@ define('Scene/HeatmapImageryProvider',[
          */
         tilingScheme : {
             get : function() {
-                                if (!this._ready) {
+                if (!this._ready) {
                     throw new DeveloperError('tilingScheme must not be called before the imagery provider is ready.');
                 }
                 
@@ -247,7 +247,7 @@ define('Scene/HeatmapImageryProvider',[
          */
         tileDiscardPolicy : {
             get : function() {
-                                if (!this._ready) {
+                if (!this._ready) {
                     throw new DeveloperError('tileDiscardPolicy must not be called before the imagery provider is ready.');
                 }
                 
@@ -554,7 +554,7 @@ define('Scene/HeatmapImageryProvider',[
      * @exception {DeveloperError} <code>requestImage</code> must not be called before the imagery provider is ready.
      */
     HeatmapImageryProvider.prototype.requestImage = function(x, y, level) {
-                if (!this._ready) {
+        if (!this._ready) {
             throw new DeveloperError('requestImage must not be called before the imagery provider is ready.');
         }
         
