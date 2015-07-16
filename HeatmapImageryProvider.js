@@ -1,3 +1,14 @@
+/*
+ *  How to add HeatmapImageryProvider to Cesium:
+ *  
+ *  1. Add the class (define - return HeatmapImageryProvider) to Cesium.js after the definition define and before the definition of Cesium.
+ *  2. Add './Scene/HeatmapImageryProvider' as the first value in the second parameter of the definition call of Cesium (on the line starting with "define('Cesium',[").
+ *  3. Add 'Scene_HeatmapImageryProvider' as the first value in the third parameter of the definition call of Cesium (on the line starting with "define('Cesium',[").
+ *  4. Add 'Cesium['HeatmapImageryProvider'] = Scene_HeatmapImageryProvider;' to the body of the definition call of Cesium (after the line starting with "var Cesium = {").
+ *  5. Make sure heatmap.js in included and available before using HeatmapImageryProvider.
+ *
+ */
+
 /*global define*/
 define('Scene/HeatmapImageryProvider',[
         '../Core/Credit',
@@ -55,15 +66,15 @@ define('Scene/HeatmapImageryProvider',[
     var HeatmapImageryProvider = function(options) {
         options = defaultValue(options, {});
         var bounds = options.bounds;
-		var data = options.data;
+        var data = options.data;
         
         if (!defined(bounds)) {
             throw new DeveloperError('options.bounds is required.');
         } else if (!defined(bounds.north) || !defined(bounds.south) || !defined(bounds.east) || !defined(bounds.west)) {
             throw new DeveloperError('options.bounds.north, options.bounds.south, options.bounds.east and options.bounds.west are required.');
         }
-		
-		if (!defined(data)) {
+        
+        if (!defined(data)) {
             throw new DeveloperError('data is required.');
         } else if (!defined(data.min) || !defined(data.max) || !defined(data.points)) {
             throw new DeveloperError('options.bounds.north, bounds.south, bounds.east and bounds.west are required.');
@@ -94,24 +105,24 @@ define('Scene/HeatmapImageryProvider',[
         this._container = this._getContainer(this.width, this.height);
         this._options.container = this._container;
         this._heatmap = h337.create(this._options);
-		this._canvas = this._container.children[0];
+        this._canvas = this._container.children[0];
         
         this._tilingScheme = new Cesium.WebMercatorTilingScheme({
-			rectangleSouthwestInMeters: new Cesium.Cartesian2(this._mbounds.west, this._mbounds.south),
-			rectangleNortheastInMeters: new Cesium.Cartesian2(this._mbounds.east, this._mbounds.north)
-		});
+            rectangleSouthwestInMeters: new Cesium.Cartesian2(this._mbounds.west, this._mbounds.south),
+            rectangleNortheastInMeters: new Cesium.Cartesian2(this._mbounds.east, this._mbounds.north)
+        });
 
         this._image = this._canvas;
         this._texture = undefined;
         this._tileWidth = this.width;
         this._tileHeight = this.height;
-	    this._ready = false;
+        this._ready = false;
 
-		if (options.data) {
-			this._ready = this.setWGS84Data(options.data.min, options.data.max, options.data.points);
-		}
-		
-		if (this._ready) { this._show = true; }
+        if (options.data) {
+            this._ready = this.setWGS84Data(options.data.min, options.data.max, options.data.points);
+        }
+        
+        if (this._ready) { this._show = true; }
     };
 
     defineProperties(HeatmapImageryProvider.prototype, {
@@ -301,8 +312,8 @@ define('Scene/HeatmapImageryProvider',[
     });
 
     HeatmapImageryProvider.prototype._setWidthAndHeight = function(mbb) {
-		var maxCanvasSize = 2000;
-		var minCanvasSize = 700;
+        var maxCanvasSize = 2000;
+        var minCanvasSize = 700;
         this.width = ((mbb.east > 0 && mbb.west < 0) ? mbb.east + Math.abs(mbb.west) : Math.abs(mbb.east - mbb.west));
         this.height = ((mbb.north > 0 && mbb.south < 0) ? mbb.north + Math.abs(mbb.south) : Math.abs(mbb.north - mbb.south));
         this._factor = 1;
@@ -434,86 +445,86 @@ define('Scene/HeatmapImageryProvider',[
     HeatmapImageryProvider.prototype.rad2deg = function(radians) {
         return (radians / (Math.PI / 180.0));
     };
-	
-	/**
-	 * Convert a WGS84 location to the corresponding heatmap location.
-	 *
+    
+    /**
+     * Convert a WGS84 location to the corresponding heatmap location.
+     *
      * @param {Object} point The WGS84 location.
      * @param {Number} [point.x] The longitude of the location.
      * @param {Number} [point.y] The latitude of the location.
-	 * @returns {Object} The corresponding heatmap location.
-	 */
-	HeatmapImageryProvider.prototype.wgs84PointToHeatmapPoint = function(point) {
-		return this.mercatorPointToHeatmapPoint(this.wgs84ToMercator(point));
-	};
+     * @returns {Object} The corresponding heatmap location.
+     */
+    HeatmapImageryProvider.prototype.wgs84PointToHeatmapPoint = function(point) {
+        return this.mercatorPointToHeatmapPoint(this.wgs84ToMercator(point));
+    };
 
-	/**
-	 * Convert a mercator location to the corresponding heatmap location.
-	 *
+    /**
+     * Convert a mercator location to the corresponding heatmap location.
+     *
      * @param {Object} point The Mercator lcation.
      * @param {Number} [point.x] The x of the location.
      * @param {Number} [point.y] The y of the location.
      * @returns {Object} The corresponding heatmap location.
-	 */
-	HeatmapImageryProvider.prototype.mercatorPointToHeatmapPoint = function(point) {
-		var pn = {};
-		
-		pn.x = Math.round((point.x - this._xoffset) / this._factor + this._spacing);
-		pn.y = Math.round((point.y - this._yoffset) / this._factor + this._spacing);
-		pn.y = this.height - pn.y;
-		
-		return pn;
-	};
+     */
+    HeatmapImageryProvider.prototype.mercatorPointToHeatmapPoint = function(point) {
+        var pn = {};
+        
+        pn.x = Math.round((point.x - this._xoffset) / this._factor + this._spacing);
+        pn.y = Math.round((point.y - this._yoffset) / this._factor + this._spacing);
+        pn.y = this.height - pn.y;
+        
+        return pn;
+    };
     
-	/**
-	 * Set an array of heatmap locations.
-	 *
-	 * @param {Number} min The minimum allowed value for the data points.
-	 * @param {Number} max The maximum allowed value for the data points.
-	 * @param {Array} data An array of data points with heatmap coordinates(x, y) and value
-	 * @returns {Boolean} Wheter or not the data was successfully added or failed.
-	 */
-	HeatmapImageryProvider.prototype.setData = function(min, max, data) {
-		if (data && data.length > 0 && min !== null && min !== false && max !== null && max !== false) {
-			this._heatmap.setData({
-				min: min,
-				max: max,
-				data: data
-			});
-			
-			return true;
-		}
-		
-		return false;
-	};
+    /**
+     * Set an array of heatmap locations.
+     *
+     * @param {Number} min The minimum allowed value for the data points.
+     * @param {Number} max The maximum allowed value for the data points.
+     * @param {Array} data An array of data points with heatmap coordinates(x, y) and value
+     * @returns {Boolean} Wheter or not the data was successfully added or failed.
+     */
+    HeatmapImageryProvider.prototype.setData = function(min, max, data) {
+        if (data && data.length > 0 && min !== null && min !== false && max !== null && max !== false) {
+            this._heatmap.setData({
+                min: min,
+                max: max,
+                data: data
+            });
+            
+            return true;
+        }
+        
+        return false;
+    };
 
-	/**
-	 * Set an array of WGS84 locations.
-	 *
-	 * @param {Number} min The minimum allowed value for the data points.
-	 * @param {Number} max The maximum allowed value for the data points.
-	 * @param {Array} data An array of data points with WGS84 coordinates(x=lon, y=lat) and value
-	 * @returns {Boolean} Wheter or not the data was successfully added or failed.
-	 */
-	HeatmapImageryProvider.prototype.setWGS84Data = function(min, max, data) {
-		if (data && data.length > 0 && min !== null && min !== false && max !== null && max !== false) {
-			var convdata = [];
-			
-			for (var i = 0; i < data.length; i++) {
-				var gp = data[i];
-				
-				var hp = this.wgs84PointToHeatmapPoint(gp);
-				if (gp.value || gp.value === 0) { hp.value = gp.value; }
-				
-				convdata.push(hp);
-			}
-			
-			return this.setData(min, max, convdata);
-		}
-		
-		return false;
-	};
-	
+    /**
+     * Set an array of WGS84 locations.
+     *
+     * @param {Number} min The minimum allowed value for the data points.
+     * @param {Number} max The maximum allowed value for the data points.
+     * @param {Array} data An array of data points with WGS84 coordinates(x=lon, y=lat) and value
+     * @returns {Boolean} Wheter or not the data was successfully added or failed.
+     */
+    HeatmapImageryProvider.prototype.setWGS84Data = function(min, max, data) {
+        if (data && data.length > 0 && min !== null && min !== false && max !== null && max !== false) {
+            var convdata = [];
+            
+            for (var i = 0; i < data.length; i++) {
+                var gp = data[i];
+                
+                var hp = this.wgs84PointToHeatmapPoint(gp);
+                if (gp.value || gp.value === 0) { hp.value = gp.value; }
+                
+                convdata.push(hp);
+            }
+            
+            return this.setData(min, max, convdata);
+        }
+        
+        return false;
+    };
+    
     /**
      * Gets the credits to be displayed when a given tile is displayed.
      *
@@ -571,7 +582,8 @@ define('Scene/HeatmapImageryProvider',[
     return HeatmapImageryProvider;
 });
 
-/*
+/*  DON'T TOUCH:
+ *
  *  heatmap.js v2.0.0 | JavaScript Heatmap Library: http://www.patrick-wied.at/static/heatmapjs/
  *
  *  Copyright 2008-2014 Patrick Wied <heatmapjs@patrick-wied.at> - All rights reserved.
