@@ -1,7 +1,7 @@
 /*
  *  How to add HeatmapImageryProvider to Cesium:
  *  
- *  1. Add the class (define - return HeatmapImageryProvider) to Cesium.js after the definition define and before the definition of Cesium.
+ *  1. Add the class (define - return HeatmapImageryProvider) to Cesium.js after the definition of define and before the definition of Cesium.
  *  2. Add './Scene/HeatmapImageryProvider' as the first value in the second parameter of the definition call of Cesium (on the line starting with "define('Cesium',[").
  *  3. Add 'Scene_HeatmapImageryProvider' as the first value in the third parameter of the definition call of Cesium (on the line starting with "define('Cesium',[").
  *  4. Add 'Cesium['HeatmapImageryProvider'] = Scene_HeatmapImageryProvider;' to the body of the definition call of Cesium (after the line starting with "var Cesium = {").
@@ -18,10 +18,8 @@ define('Scene/HeatmapImageryProvider',[
         '../Core/DeveloperError',
         '../Core/Event',
         '../Core/GeographicTilingScheme',
-        '../Core/loadImage',
         '../Core/Rectangle',
-        '../Core/TileProviderError',
-        '../ThirdParty/when'
+        '../Core/TileProviderError'
     ], function(
         Credit,
         defaultValue,
@@ -30,15 +28,14 @@ define('Scene/HeatmapImageryProvider',[
         DeveloperError,
         Event,
         GeographicTilingScheme,
-        loadImage,
         Rectangle,
-        TileProviderError,
-        when) {
+        TileProviderError) {
     "use strict";
 
     /**
      * Provides a single, top-level imagery tile.  The single image is assumed to use a
      * {@link GeographicTilingScheme}.
+	 
      *
      * @alias HeatmapImageryProvider
      * @constructor
@@ -121,8 +118,6 @@ define('Scene/HeatmapImageryProvider',[
         if (options.data) {
             this._ready = this.setWGS84Data(options.data.min, options.data.max, options.data.points);
         }
-        
-        if (this._ready) { this._show = true; }
     };
 
     defineProperties(HeatmapImageryProvider.prototype, {
