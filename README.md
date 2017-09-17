@@ -9,7 +9,7 @@ To use this on your page do the following:
 - After new data is added to the CesiumHeatmap instance it will automatically show/update the layer.
 
 ## Example
-```javascipt
+```javascript
 let bounds = {
     west: 147.13833844,
     east: 147.13856899,
