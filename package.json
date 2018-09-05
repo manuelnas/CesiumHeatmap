@@ -1,0 +1,26 @@
+{
+  "name": "cesium-heatmap",
+  "version": "0.0.4",
+  "description": "A helper to add heatmaps (using heatmap.js) to CesiumJS",
+  "main": "CesiumHeatmap.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/danwild/CesiumHeatmap.git"
+  },
+  "keywords": [
+    "cesium",
+    "cesiumjs",
+    "heatmap",
+    "visualisation",
+    "visualization"
+  ],
+  "author": "danwild@y7mail",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/danwild/CesiumHeatmap/issues"
+  },
+  "homepage": "https://github.com/danwild/CesiumHeatmap#readme"
+}
